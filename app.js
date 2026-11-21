@@ -125,8 +125,9 @@
     proj = d3.geoMercator().fitWidth(W - 2 * pad, fc);
     path = d3.geoPath(proj);
     const b0 = path.bounds(fc);
-    H = Math.ceil(b0[1][1] - b0[0][1] + 2 * pad);
-    proj.fitExtent([[pad, pad], [W - pad, H - pad]], fc);
+    const padB = narrow() ? pad : 150; // desktop legend sits over the bottom-left corner; keep Cà Mau clear of it
+    H = Math.ceil(b0[1][1] - b0[0][1] + pad + padB);
+    proj.fitExtent([[pad, pad], [W - pad, H - padB]], fc);
     const svg = d3.select("#map").attr("viewBox", `0 0 ${W} ${H}`).style("aspect-ratio", `${W} / ${H}`);
     svg.selectAll("*").remove(); svg.on(".zoom", null); curK = 1;
     gRoot = svg.append("g");
