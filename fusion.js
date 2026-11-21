@@ -31,6 +31,13 @@
     tc.className = "card tablecard"; tc.id = "tablecard"; tc.hidden = true;
     $(".main").after(tc);
     $(".codcard h2").insertAdjacentHTML("afterend", `<button type="button" class="act play" id="play" aria-pressed="false"></button>`);
+    // dark by default; the sun/moon button in the band switches to light and remembers it
+    const ui = $("#uitog"), paint = () => { const lt = document.documentElement.dataset.ui === "light";
+      ui.textContent = lt ? "☾" : "☀"; ui.setAttribute("aria-label", t(lt ? "ui_dark" : "ui_light")); ui.setAttribute("aria-pressed", String(lt)); };
+    ui.onclick = () => { const lt = document.documentElement.dataset.ui !== "light";
+      if (lt) document.documentElement.dataset.ui = "light"; else delete document.documentElement.dataset.ui;
+      store.set("pdp8-ui", lt ? "light" : "dark"); paint(); };
+    paint();
     wire();
     if (!navigator.webdriver && !store.get("pdp8-tour")) setTimeout(() => tour(0), 900);
   }

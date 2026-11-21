@@ -5,25 +5,23 @@
 <style>
 /* Layout: teal Allotrope band, filter rail, map left / context panel right, analysis strip below */
 :root {
+  --bg: #0D1A18; --paper: #13231F; --paper-2: #182C28; --ink: #E3EEEB; --muted: #93A8A3; --line: #24403A;
+  --teal: #2A9C8F; --deep: #0A3B34; --green: #3DB39F; --mint: #6CC3B4; --red: #FF6B5E;
+  --wind: #5A93DB; --solar: #BD8026; --land: #172B27; --land-line: #2C4A44; --sea: #0F201D;
+  --c0: #1A302B; --c1: #1F4A42; --c2: #23685C; --c3: #2B8A7B; --c4: #45B3A1; --c5: #8EE0D1;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  --sel: #1D7E74;
+  --f-ui: "Cabin", "Segoe UI", system-ui, sans-serif; --f-data: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark }
+/* dark is the default look; the band toggle sets data-ui="light" (own attribute, so the claude.ai host theme does not override it) */
+:root[data-ui="light"] {
   --bg: #E6F4F1; --paper: #FFFFFF; --paper-2: #F3FAF8; --ink: #1C2624; --muted: #5D6B67; --line: #CFE3DE;
   --teal: #1D7E74; --deep: #0B4A41; --green: #11665A; --mint: #86CFC2; --red: #E94438;
   --wind: #2E6DB4; --solar: #E9A23B; --land: #F7FBFA; --land-line: #B9D6CF; --sea: #DCEFEA;
   --c0: #EAF5F2; --c1: #BFE5DC; --c2: #86CFC2; --c3: #3FA597; --c4: #1D7E74; --c5: #0B4A41;
   --shadow: 0 1px 2px rgba(11,74,65,.08), 0 6px 20px rgba(11,74,65,.07);
-  --f-ui: "Cabin", "Segoe UI", system-ui, sans-serif; --f-data: "IBM Plex Mono", ui-monospace, Consolas, monospace;
-}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0D1A18; --paper: #13231F; --paper-2: #182C28; --ink: #E3EEEB; --muted: #93A8A3; --line: #24403A;
-  --teal: #2A9C8F; --deep: #0A3B34; --green: #3DB39F; --mint: #6CC3B4; --red: #FF6B5E;
-  --wind: #5A93DB; --solar: #BD8026; --land: #172B27; --land-line: #2C4A44; --sea: #0F201D;
-  --c0: #1A302B; --c1: #1F4A42; --c2: #23685C; --c3: #2B8A7B; --c4: #45B3A1; --c5: #8EE0D1;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); color-scheme: dark } }
-:root[data-theme="dark"] {
-  --bg: #0D1A18; --paper: #13231F; --paper-2: #182C28; --ink: #E3EEEB; --muted: #93A8A3; --line: #24403A;
-  --teal: #2A9C8F; --deep: #0A3B34; --green: #3DB39F; --mint: #6CC3B4; --red: #FF6B5E;
-  --wind: #5A93DB; --solar: #BD8026; --land: #172B27; --land-line: #2C4A44; --sea: #0F201D;
-  --c0: #1A302B; --c1: #1F4A42; --c2: #23685C; --c3: #2B8A7B; --c4: #45B3A1; --c5: #8EE0D1;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); color-scheme: dark }
+  --sel: #0B4A41;
+  color-scheme: light }
 
 * { box-sizing: border-box }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 14px; line-height: 1.45 }
@@ -54,7 +52,7 @@ button, select, input { font: inherit; color: inherit }
 .filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-top: 16px }
 .seg { display: inline-flex; background: var(--paper); border-radius: 999px; padding: 3px; box-shadow: var(--shadow) }
 .seg button { border: 0; background: transparent; padding: 6px 13px; border-radius: 999px; cursor: pointer; font-weight: 500; display: inline-flex; gap: 6px; align-items: center }
-.seg button[aria-pressed="true"] { background: var(--deep); color: #fff }
+.seg button[aria-pressed="true"] { background: var(--sel); color: #fff }
 .seg .dot { width: 9px; height: 9px; border-radius: 50% }
 .sel { display: inline-flex; flex-direction: column; gap: 2px; min-width: 0 }
 .sel label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted) }
@@ -82,7 +80,7 @@ button, select, input { font: inherit; color: inherit }
 .wt .wn { font-size: 12.5px; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .wt .wv { font-size: 11.5px; color: var(--muted) }
 .wt:hover { border-color: var(--teal); transform: translateY(-1px); box-shadow: var(--shadow) }
-.wt.on { border-color: var(--deep); background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--deep) }
+.wt.on { border-color: var(--sel); background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--sel) }
 .wt:focus-visible, .cy:focus-visible, .bk:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px }
 @keyframes rise { from { opacity: .3; transform: translateY(6px) } }
 @media (max-width: 1080px) { .wall-row { grid-template-columns: repeat(4, minmax(0, 1fr)) } }
@@ -121,7 +119,7 @@ button, select, input { font: inherit; color: inherit }
 .regions button { border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 6px 10px; cursor: pointer; text-align: left; line-height: 1.15; box-shadow: var(--shadow) }
 .regions button b { display: block; font-size: 13px }
 .regions button small { color: var(--muted); font-family: var(--f-data); font-size: 11px }
-.regions button[aria-pressed="true"] { background: var(--deep); color: #fff; border-color: var(--deep) }
+.regions button[aria-pressed="true"] { background: var(--sel); color: #fff; border-color: var(--sel) }
 .regions button[aria-pressed="true"] small { color: #CBE9E3 }
 .legend { position: absolute; left: 12px; bottom: 12px; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(6px); border-radius: 10px; padding: 10px 12px; font-size: 11.5px; display: grid; gap: 6px; box-shadow: var(--shadow); z-index: 5; max-width: calc(100% - 24px) }
 .legend .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap }
@@ -209,7 +207,9 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
 .band-r { display: flex; align-items: center; gap: 16px; flex: none }
 .seg.lang { background: rgba(255,255,255,.14); box-shadow: none }
 .seg.lang button { color: #fff; padding: 5px 11px; font-size: 12.5px; font-weight: 600 }
-.seg.lang button[aria-pressed="true"] { background: #fff; color: var(--deep) }
+.seg.lang button[aria-pressed="true"] { background: #fff; color: var(--sel) }
+.uitog { width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255,255,255,.14); color: #fff; cursor: pointer; font-size: 16px; line-height: 1 }
+.uitog:hover { background: rgba(255,255,255,.26) }
 .shade select { font: inherit; font-size: 11.5px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); padding: 2px 4px; margin-left: 4px }
 .codcard { grid-column: 1 / -1 }
 .codleg { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11.5px; color: var(--muted); margin-bottom: 8px }
@@ -271,7 +271,7 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
   .search svg { bottom: 13px }
   .seg button { padding: 8px 12px }
   .ftoggle { display: inline-flex; align-items: center; margin-left: auto; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 14px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow) }
-  .ftoggle[aria-expanded="true"] { background: var(--deep); color: #fff; border-color: var(--deep) }
+  .ftoggle[aria-expanded="true"] { background: var(--sel); color: #fff; border-color: var(--sel) }
   .filters .sel:not(.search), .filters .reset { display: none }
   .filters.fopen .sel:not(.search) { display: flex; flex: 1 1 calc(50% - 8px) }
   .filters.fopen .sel select { width: 100%; padding-block: 9px; font-size: 16px }
@@ -345,8 +345,8 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
 .acts { display: flex; flex-wrap: wrap; gap: 6px }
 .act { border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px; font-weight: 500; text-decoration: none; box-shadow: var(--shadow) }
 .act:hover { border-color: var(--teal) }
-.act.pri { background: var(--deep); color: #fff; border-color: var(--deep) }
-#viewtabs button[aria-selected="true"] { background: var(--deep); color: #fff }
+.act.pri { background: var(--sel); color: #fff; border-color: var(--sel) }
+#viewtabs button[aria-selected="true"] { background: var(--sel); color: #fff }
 .tablecard { margin-top: 10px; padding: 14px 0 10px }
 .tb-h { padding: 0 18px 8px; font-size: 13px }
 .tbwrap { overflow: auto; max-height: 78vh }
@@ -386,6 +386,7 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }
 </style>
+<script>try { if (localStorage.getItem("pdp8-ui") === "light") document.documentElement.dataset.ui = "light"; } catch (e) { /* storage blocked: stay dark */ }</script>
 
 <header class="band">
   <div class="wrap">
@@ -394,6 +395,7 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
       <p id="meta">Backer map v0.5 · 744 projects named in Decision 1509/QĐ-BCT · 34 provinces after the 2025 merger</p>
     </div>
     <div class="band-r">
+      <button type="button" class="uitog" id="uitog" aria-label="Light mode" data-i18n-al="ui_light">☀</button>
       <div class="seg lang" role="group" aria-label="Language / Ngôn ngữ" id="lang">
         <button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="vi" aria-pressed="false">VI</button>
       </div>
