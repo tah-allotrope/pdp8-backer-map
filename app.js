@@ -453,7 +453,7 @@
   function overView(ps) {
     const title = S.region ? REG(S.region) : t("VN");
     const provs = G.features.filter((f) => !S.region || f.properties.region === S.region);
-    const pr = groupRows(ps, "prov", S.showAll ? 0 : 12), bk = groupRows(ps, GK(), 8);
+    const pr = groupRows(ps, "prov", S.showAll ? 0 : 7), bk = groupRows(ps, GK(), 6);
     return `<h2>${title}</h2><p class="sub">${t("provs_sub", { a: provs.length, b: pr.all })}</p>
       ${stats([[fmt(ps.length), t("projects")], [mwTxt(sum(ps)), t("capacity")], [invShare(ps), t("inv_share")]])}
       ${splitBar(ps)}
