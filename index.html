@@ -320,7 +320,7 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
   .bk .tr { grid-column: 1 / -1; grid-row: 2 }
   .stage { grid-template-columns: 110px minmax(0, 1fr) 60px }
 }
-/* fusion layer (fusion.js): editorial lede + 2030 target bars, view bar, table, per-hop evidence, tour */
+/* fusion layer (fusion.js): editorial lede + 2030 target bars, view bar, table, per-hop evidence */
 [hidden] { display: none !important }
 .lede { margin-top: 18px; padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 10px 28px; align-items: center; border-left: 4px solid var(--teal) }
 .kick { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600 }
@@ -369,11 +369,6 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
 .wall-h .own button { padding: 4px 10px; font-size: 12px }
 .codcard { position: relative }
 .codcard .play { position: absolute; right: 18px; top: 14px }
-.tourcard { position: absolute; z-index: 60; background: var(--paper); border-radius: 12px; padding: 14px 16px; box-shadow: 0 10px 40px rgba(0,0,0,.28); border-top: 4px solid var(--teal) }
-.tourcard h4 { margin: 4px 0; font-size: 15px }
-.tourcard p { margin: 0; font-size: 13px }
-.tour-b { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px }
-.tour-on { outline: 3px solid var(--teal); outline-offset: 4px; border-radius: 12px }
 @media (max-width: 640px) {
   .lede { grid-template-columns: minmax(0, 1fr); padding: 12px 14px; margin-top: 12px }
   .lede .find { font-size: 16px }
@@ -382,7 +377,6 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
   .wall-h .own { margin-left: 0 }
   .act { padding: 8px 12px }
   .codcard .play { position: static; margin: 4px 0 8px }
-  .tourcard { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); top: auto; width: auto }
   .tablecard { margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); border-radius: 0 }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }

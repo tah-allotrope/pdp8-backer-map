@@ -1,5 +1,5 @@
 /* Fusion layer on top of app.js: editorial lede with 2030 target bars, Map/Table view with CSV export,
-   copy-link, COD year player and a 3-step tour. Hooks in through window.PDP8_HOOKS; strings live in i18n.js. */
+   copy-link and a COD year player. Hooks in through window.PDP8_HOOKS; strings live in i18n.js. */
 (() => {
   "use strict";
   // Decision 768/QĐ-TTg (Apr 2025), main text III.1.b.i: 2030 capacity ranges in MW (pdt-tprim.md N1, N3)
@@ -25,7 +25,7 @@
     bar.innerHTML = `<div class="seg" role="tablist" aria-label="${t("view_al")}" id="viewtabs">
         <button type="button" role="tab" data-view="map">${t("view_map")}</button><button type="button" role="tab" data-view="table">${t("view_table")}</button></div>
       <div class="acts">${PUBLIC ? `<button type="button" class="act" id="copylink">${t("copy")}</button><button type="button" class="act" id="csv">${t("csv")}</button>`
-        : `<a class="act" href="${SITE}" target="_blank" rel="noopener">${t("pub_only")} ↗</a>`}<button type="button" class="act" id="tourbtn">${t("tour")}</button></div>`;
+        : `<a class="act" href="${SITE}" target="_blank" rel="noopener">${t("pub_only")} ↗</a>`}</div>`;
     $(".main").before(bar);
     const tc = document.createElement("section");
     tc.className = "card tablecard"; tc.id = "tablecard"; tc.hidden = true;
@@ -39,7 +39,6 @@
       store.set("pdp8-ui", lt ? "light" : "dark"); paint(); };
     paint();
     wire();
-    if (!navigator.webdriver && !store.get("pdp8-tour")) setTimeout(() => tour(0), 900);
   }
 
   function update(F, scoped) {
@@ -131,40 +130,6 @@
     step();
   }
 
-  /* ---------- tour ---------- */
-  const STEPS = [["#lede", "tour1"], ["#map", "tour2"], ["#wall", "tour3"]];
-  function tour(i) {
-    document.querySelectorAll(".tour-on").forEach((e) => e.classList.remove("tour-on"));
-    $("#tourcard")?.remove();
-    document.removeEventListener("pointerdown", outside, true);
-    if (i >= STEPS.length || i < 0) { store.set("pdp8-tour", "1"); return; }
-    if (STEPS[i][0] === "#map" && A.S.view === "table") { A.S.view = "map"; A.update(); }
-    const el = $(STEPS[i][0]), [, k] = STEPS[i];
-    el.classList.add("tour-on");
-    const c = document.createElement("div");
-    c.className = "tourcard"; c.id = "tourcard"; c.setAttribute("role", "dialog"); c.setAttribute("aria-label", t(k + "_h"));
-    c.innerHTML = `<span class="kick num">${i + 1} / ${STEPS.length}</span><h4>${t(k + "_h")}</h4><p>${t(k)}</p>
-      <div class="tour-b"><button type="button" class="act" data-tour="skip">${t("skip")}</button><button type="button" class="act pri" data-tour="next">${t(i === STEPS.length - 1 ? "done" : "next")}</button></div>`;
-    document.body.append(c);
-    el.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-    const place = () => {
-      const r = el.getBoundingClientRect(), cw = Math.min(320, innerWidth - 32);
-      const inside = r.height > innerHeight * 0.6; // tall targets (the map) carry the card on their top edge
-      const top = inside ? Math.max(r.top, 0) + 64 : (r.bottom + 12 + 190 < innerHeight ? r.bottom + 12 : Math.max(12, r.top - 202));
-      c.style.width = cw + "px";
-      c.style.left = Math.min(Math.max(16, r.left + (inside ? r.width - cw - 56 : 0)), innerWidth - cw - 16) + "px";
-      c.style.top = top + scrollY + "px";
-    };
-    // phones dock the card to the bottom of the screen (CSS); desktop places it beside the target
-    if (!matchMedia("(max-width: 640px)").matches) { setTimeout(place, 420); place(); }
-    // any tap outside the card means the reader has started exploring: end the tour
-    setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
-    c.querySelector(".pri").focus({ preventScroll: true });
-    c.onclick = (e) => { const b = e.target.closest("[data-tour]"); if (b) tour(b.dataset.tour === "skip" ? -1 : i + 1); };
-  }
-
-  function outside(e) { if (!e.target.closest("#tourcard")) tour(-1); }
-
   function wire() {
     document.addEventListener("click", (e) => {
       const b = e.target.closest("button"); if (!b) return;
@@ -174,11 +139,9 @@
       if (b.id === "csv") { csv(); return; }
       if (b.id === "copylink") { copyLink(b); return; }
       if (b.id === "play") { togglePlay(); return; }
-      if (b.id === "tourbtn") tour(0);
     });
     const open = (row) => { A.S.view = "map"; A.selectProject(row.dataset.row); };
     $("#tablecard").addEventListener("click", (e) => { const r = e.target.closest("tr[data-row]"); if (r) open(r); });
     $("#tablecard").addEventListener("keydown", (e) => { const r = e.target.closest("tr[data-row]"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open(r); } });
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("#tourcard")) tour(-1); });
   }
 })();
