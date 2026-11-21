@@ -136,6 +136,7 @@
   function tour(i) {
     document.querySelectorAll(".tour-on").forEach((e) => e.classList.remove("tour-on"));
     $("#tourcard")?.remove();
+    document.removeEventListener("pointerdown", outside, true);
     if (i >= STEPS.length || i < 0) { store.set("pdp8-tour", "1"); return; }
     if (STEPS[i][0] === "#map" && A.S.view === "table") { A.S.view = "map"; A.update(); }
     const el = $(STEPS[i][0]), [, k] = STEPS[i];
@@ -154,10 +155,15 @@
       c.style.left = Math.min(Math.max(16, r.left + (inside ? r.width - cw - 56 : 0)), innerWidth - cw - 16) + "px";
       c.style.top = top + scrollY + "px";
     };
-    setTimeout(place, 420); place();
+    // phones dock the card to the bottom of the screen (CSS); desktop places it beside the target
+    if (!matchMedia("(max-width: 640px)").matches) { setTimeout(place, 420); place(); }
+    // any tap outside the card means the reader has started exploring: end the tour
+    setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
     c.querySelector(".pri").focus({ preventScroll: true });
     c.onclick = (e) => { const b = e.target.closest("[data-tour]"); if (b) tour(b.dataset.tour === "skip" ? -1 : i + 1); };
   }
+
+  function outside(e) { if (!e.target.closest("#tourcard")) tour(-1); }
 
   function wire() {
     document.addEventListener("click", (e) => {

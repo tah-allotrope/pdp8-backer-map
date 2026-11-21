@@ -382,6 +382,7 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
   .wall-h .own { margin-left: 0 }
   .act { padding: 8px 12px }
   .codcard .play { position: static; margin: 4px 0 8px }
+  .tourcard { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); top: auto; width: auto }
   .tablecard { margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); border-radius: 0 }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }
