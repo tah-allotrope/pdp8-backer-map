@@ -34,7 +34,7 @@
   /* ---------- language ---------- */
   const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
     set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } } };
-  let lang = store.get("pdp8-lang") === "vi" ? "vi" : "en", L = I18N[lang];
+  let lang = (new URLSearchParams(location.search).get("lang") || store.get("pdp8-lang")) === "vi" ? "vi" : "en", L = I18N[lang];
   const t = (k, vars) => String(L[k] ?? I18N.en[k] ?? k).replace(/\{(\w+)\}/g, (_, v) => (vars && vars[v] != null ? vars[v] : ""));
   const tr = (map, v) => (v == null ? "" : (L[map] && L[map][v]) || I18N.en[map][v] || v);
   const REG = (r) => t(r);
@@ -62,6 +62,7 @@
     projById = new Map(P.map((p) => [p.id, p]));
     applyStatic();
     buildFilters();
+    readURL();
     buildMap();
     wire();
     renderFoot();
@@ -313,7 +314,27 @@
   function selectBacker(g) { S.backer = g; S.project = null; S.showAll = false; update(); frame(); showMap(); }
 
   /* ---------- render ---------- */
+  // shareable view: filters + selection live in the query string (GitHub Pages; the claude.ai sandbox ignores it)
+  const UKEYS = ["tech", ...FKEYS, "shade", "region", "prov", "project", "backer"];
+  function readURL() {
+    let q; try { q = new URLSearchParams(location.search); } catch { return; }
+    UKEYS.forEach((k) => { const v = q.get(k); if (v) S[k] = v; });
+    if (S.project && !projById.has(S.project)) S.project = null;
+    if (S.prov && !provById.has(S.prov)) S.prov = S.region = null;
+    FKEYS.forEach((k) => { $("#f-" + k).value = S[k]; });
+    document.querySelectorAll("#tech button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === S.tech)));
+  }
+  function writeURL() {
+    try {
+      const q = new URLSearchParams();
+      UKEYS.forEach((k) => { const v = S[k]; if (v && !(k === "tech" && v === "all") && !(k === "shade" && v === "density")) q.set(k, v); });
+      if (lang === "vi") q.set("lang", "vi");
+      const qs = q.toString();
+      history.replaceState(null, "", location.pathname + (qs ? "?" + qs : "") + location.hash);
+    } catch { /* sandboxed frame: state stays in the page */ }
+  }
   function update() {
+    writeURL();
     const F = filtered();
     const scoped = F.filter(inScope);
     paintMap(F);
