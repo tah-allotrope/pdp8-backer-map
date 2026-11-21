@@ -90,7 +90,7 @@ button, select, input { font: inherit; color: inherit }
 .hits em { font-style: normal; color: var(--muted); font-size: 12px; white-space: nowrap }
 
 /* main */
-.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; align-items: start }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; align-items: stretch } /* both columns end level: the shorter one's last card grows */
 .card { background: var(--paper); border-radius: 12px; box-shadow: var(--shadow); min-width: 0 }
 .mapcard { position: relative; overflow: hidden; background: var(--sea) }
 @media (min-width: 641px) { #map { max-height: calc(100vh - 170px) } } /* whole map card fits one screen; the panel lists top 7 provinces / 6 backers so its height roughly matches */
@@ -188,6 +188,10 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
 .more { border: 0; background: none; color: var(--teal); cursor: pointer; padding: 6px 8px; font-weight: 600 }
 
 /* lower strip */
+.maincol { display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.statuscard { padding: 16px 18px; flex: 1 }
+.statuscard h2 { margin: 0; font-size: 16px; font-weight: 600 }
+.statuscard .hint { color: var(--muted); font-size: 12.5px; margin: 2px 0 10px }
 .lower { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; margin-top: 16px }
 .lower .card { padding: 16px 18px }
 .lower h2 { margin: 0; font-size: 16px; font-weight: 600 }
@@ -244,6 +248,8 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
 @media (max-width: 1080px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)) } }
 @media (max-width: 960px) {
   .main, .lower { grid-template-columns: minmax(0, 1fr) }
+  .maincol { display: contents }
+  .statuscard { order: 3 }
   .panel { position: static; max-height: none }
   #map { max-height: 78vh }
 }
@@ -431,6 +437,7 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
   </section>
 
   <section class="main">
+    <div class="maincol">
     <div class="card mapcard">
       <div class="mapui"><div class="regions" id="regions"></div></div>
       <div class="zoom"><button type="button" id="zin" aria-label="Zoom in" data-i18n-al="zin">+</button><button type="button" id="zout" aria-label="Zoom out" data-i18n-al="zout">−</button><button type="button" id="zhome" aria-label="Show all of Vietnam" data-i18n-al="zhome">⌂</button></div>
@@ -439,6 +446,12 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
       <div class="legend" id="legend"></div>
       <div class="tip" id="tip"></div>
       <div class="wheelhint" id="wheelhint" aria-hidden="true"><span data-i18n="wheel">Use Ctrl + scroll to zoom the map</span></div>
+    </div>
+    <div class="card statuscard">
+      <h2 data-i18n="st_title">Project status</h2>
+      <p class="hint" data-i18n="st_hint">Stage from public sources in the current view; may lag the province's own records.</p>
+      <div id="stages"></div>
+    </div>
     </div>
     <aside class="card panel" id="panel" aria-live="polite"></aside>
   </section>
@@ -453,9 +466,6 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
       <h2 data-i18n="reg_title">North, Central and South</h2>
       <p class="hint" data-i18n="reg_hint">MW by region in the current filter; bar split wind / solar. Pick a region to zoom.</p>
       <div class="regchart" id="regchart"></div>
-      <h2 style="margin-top:20px" data-i18n="st_title">Project status</h2>
-      <p class="hint" data-i18n="st_hint">Stage from public sources in the current view; may lag the province's own records.</p>
-      <div id="stages"></div>
     </div>
     <div class="card codcard">
       <h2 data-i18n="cod_title">COD by year</h2>
