@@ -132,7 +132,7 @@
     proj = d3.geoMercator().fitWidth(W - 2 * pad, fc);
     path = d3.geoPath(proj);
     const b0 = path.bounds(fc);
-    const padB = narrow() ? pad : 150; // desktop legend sits over the bottom-left corner; keep Cà Mau clear of it
+    const padB = pad; // the legend sits below the map, so nothing covers Cà Mau
     H = Math.ceil(b0[1][1] - b0[0][1] + pad + padB);
     proj.fitExtent([[pad, pad], [W - pad, H - padB]], fc);
     const svg = d3.select("#map").attr("viewBox", `0 0 ${W} ${H}`).style("aspect-ratio", `${W} / ${H}`);
@@ -170,11 +170,17 @@
     gLab.selectAll("text").data(G.features).join("text").attr("class", "plab")
       .attr("x", (f) => proj(f.properties.lab)[0]).attr("y", (f) => proj(f.properties.lab)[1])
       .attr("text-anchor", "middle").text((f) => f.id).style("display", "none");
-    zoom = d3.zoom().scaleExtent([1, 14]).translateExtent([[-100, -100], [W + 100, H + 100]]).on("zoom", (ev) => {
+    // mouse notches (|deltaY| ~100) zoom ~1.3x each; a trackpad pinch sends small ctrl deltas, so those step faster
+    const wheelDelta = (ev) => -ev.deltaY * (ev.deltaMode === 1 ? 0.05 : ev.deltaMode ? 1 : Math.abs(ev.deltaY) < 50 ? 0.02 : 0.003);
+    zoom = d3.zoom().wheelDelta(wheelDelta).scaleExtent([1, 14]).translateExtent([[-100, -100], [W + 100, H + 100]]).on("zoom", (ev) => {
       gRoot.attr("transform", ev.transform); curK = ev.transform.k; rescale();
       // at full view one finger scrolls the page; once zoomed in it pans the map
       svg.style("touch-action", curK > 1.01 ? "none" : "pan-y");
-    }).filter((ev) => (ev.type === "touchstart" ? (ev.touches.length > 1 || curK > 1.01) : (!ev.ctrlKey || ev.type === "wheel") && !ev.button));
+    }).filter((ev) => (ev.type === "touchstart" ? (ev.touches.length > 1 || curK > 1.01)
+      : ev.type === "wheel" ? ev.ctrlKey || ev.metaKey : !ev.ctrlKey && !ev.button));
+    let wt; // plain wheel over the map scrolls the page; flash how to zoom instead
+    svg.on("wheel.hint", (ev) => { if (ev.ctrlKey || ev.metaKey) return; $("#wheelhint").classList.add("on");
+      clearTimeout(wt); wt = setTimeout(() => $("#wheelhint").classList.remove("on"), 1100); }, { passive: true });
     svg.call(zoom).on("dblclick.zoom", null).style("touch-action", "pan-y").on("click", (ev) => {
       const hit = nearest(ev); if (hit) { selectProject(hit.id); return; }
       if (S.project || S.backer) { S.project = null; S.backer = null; update(); } });
