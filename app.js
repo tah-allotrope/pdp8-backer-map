@@ -41,7 +41,7 @@
   if (lang === "vi") d3.formatDefaultLocale({ decimal: ",", thousands: ".", grouping: [3], currency: ["", "₫"] });
 
   const S = { tech: "all", fit: "", stage: "", label: "", btype: "", cody: "", codq: "", shade: "density",
-    region: null, prov: null, project: null, backer: null, showAll: false };
+    region: null, prov: null, project: null, backer: null, showAll: false, own: "group", view: "map" };
   const FKEYS = ["fit", "stage", "label", "btype", "cody", "codq"];
   let D, G, P, LOGO = {}, provById, projById, zoom, gRoot, gProv, gPts, gFx, gLab, curK = 1, pts;
   // phones get a tall viewBox so Vietnam's S-shape fills the screen; desktop stays near-square
@@ -49,6 +49,9 @@
   let W = 800, H = 820;
   const narrow = () => MQ.matches;
   const sheetOn = () => narrow() && !!(S.prov || S.backer || S.project);
+  // backer key: ultimate group (default) or direct investor (project company owner)
+  const GK = () => (S.own === "inv" ? "inv" : "group");
+  const HOOKS = (window.PDP8_HOOKS = []); // fusion.js adds the lede, table, tour and COD player here
 
   Promise.all([fetch("geo.json").then((r) => r.json()), fetch("data.json").then((r) => r.json()),
     fetch("logos/logos.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}))])
@@ -66,6 +69,9 @@
     buildMap();
     wire();
     renderFoot();
+    window.PDP8 = { S, P, D, lang, t, tr, esc, fmt, mwTxt, sum, logo, filtered, inScope, GK, LABELS, REG,
+      update: () => update(), selectProject: (id) => selectProject(id), frame: () => frame() };
+    HOOKS.forEach((h) => h.init && h.init(window.PDP8));
     update(true);
   }
 
@@ -218,7 +224,7 @@
   }
   function frame() {
     if (S.project) { const p = projById.get(S.project); const r = 34; zoomToBounds([[p.px - r, p.py - r], [p.px + r, p.py + r]], 7); return; }
-    if (S.backer) { const ps = P.filter((p) => p.group === S.backer && pass(p)); if (ps.length) {
+    if (S.backer) { const ps = P.filter((p) => p[GK()] === S.backer && pass(p)); if (ps.length) {
       const xs = ps.map((p) => p.px), ys = ps.map((p) => p.py), pad = 40;
       zoomToBounds([[d3.min(xs) - pad, d3.min(ys) - pad], [d3.max(xs) + pad, d3.max(ys) + pad]], 6); return; } }
     if (S.prov) return zoomToBounds(mainlandBounds([provById.get(S.prov)]), 8);
@@ -247,12 +253,12 @@
     $("#rampmax").textContent = `0 – ${shadeTxt(mx)}`;
     const show = new Set(F.map((p) => p.id));
     pts.classed("off", (p) => !show.has(p.id))
-      .classed("fade", (p) => (S.backer ? p.group !== S.backer : (S.prov ? p.prov !== S.prov : (S.region ? p.region !== S.region : false))))
-      .classed("hot", (p) => p.id === S.project || (S.backer && p.group === S.backer));
+      .classed("fade", (p) => (S.backer ? p[GK()] !== S.backer : (S.prov ? p.prov !== S.prov : (S.region ? p.region !== S.region : false))))
+      .classed("hot", (p) => p.id === S.project || (S.backer && p[GK()] === S.backer));
     // backer constellation / project ring
     gFx.selectAll("*").interrupt().remove();
     if (S.backer) {
-      const ps = F.filter((p) => p.group === S.backer).sort((a, b) => b.xy[1] - a.xy[1]);
+      const ps = F.filter((p) => p[GK()] === S.backer).sort((a, b) => b.xy[1] - a.xy[1]);
       if (ps.length > 1) {
         const ln = gFx.append("path").attr("class", "link")
           .attr("d", d3.line().x((p) => p.px).y((p) => p.py).curve(d3.curveCatmullRom.alpha(0.6))(ps));
@@ -315,19 +321,21 @@
 
   /* ---------- render ---------- */
   // shareable view: filters + selection live in the query string (GitHub Pages; the claude.ai sandbox ignores it)
-  const UKEYS = ["tech", ...FKEYS, "shade", "region", "prov", "project", "backer"];
+  const UKEYS = ["tech", ...FKEYS, "shade", "region", "prov", "project", "backer", "own", "view"];
   function readURL() {
     let q; try { q = new URLSearchParams(location.search); } catch { return; }
     UKEYS.forEach((k) => { const v = q.get(k); if (v) S[k] = v; });
     if (S.project && !projById.has(S.project)) S.project = null;
     if (S.prov && !provById.has(S.prov)) S.prov = S.region = null;
+    if (S.own !== "inv") S.own = "group";
+    if (S.view !== "table") S.view = "map";
     FKEYS.forEach((k) => { $("#f-" + k).value = S[k]; });
     document.querySelectorAll("#tech button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === S.tech)));
   }
   function writeURL() {
     try {
       const q = new URLSearchParams();
-      UKEYS.forEach((k) => { const v = S[k]; if (v && !(k === "tech" && v === "all") && !(k === "shade" && v === "density")) q.set(k, v); });
+      UKEYS.forEach((k) => { const v = S[k]; if (v && !(k === "tech" && v === "all") && !(k === "shade" && v === "density") && !(k === "own" && v === "group") && !(k === "view" && v === "map")) q.set(k, v); });
       if (lang === "vi") q.set("lang", "vi");
       const qs = q.toString();
       history.replaceState(null, "", location.pathname + (qs ? "?" + qs : "") + location.hash);
@@ -338,7 +346,7 @@
     const F = filtered();
     const scoped = F.filter(inScope);
     paintMap(F);
-    renderKPIs(S.backer ? F.filter((p) => p.group === S.backer) : scoped);
+    renderKPIs(S.backer ? F.filter((p) => p[GK()] === S.backer) : scoped);
     renderRegionButtons(F);
     renderPanel(F, scoped);
     renderBackers(scoped);
@@ -346,6 +354,7 @@
     renderStages(scoped);
     renderCod(scoped);
     renderWall(F);
+    HOOKS.forEach((h) => h.update && h.update(F, scoped));
     document.querySelectorAll("#tech button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === S.tech)));
   }
   function tweenNum(el, to, f) {
@@ -414,7 +423,7 @@
     const el = $("#panel"), sh = $("#sheet");
     let d = "";
     if (S.project) d = projectView(projById.get(S.project));
-    else if (S.backer) d = backerView(F.filter((p) => p.group === S.backer));
+    else if (S.backer) d = backerView(F.filter((p) => p[GK()] === S.backer));
     else if (S.prov) d = provView(scoped);
     if (sheetOn()) {
       // phone: detail rides in a bottom sheet over the map; the inline panel keeps the region overview
@@ -437,7 +446,7 @@
   function overView(ps) {
     const title = S.region ? REG(S.region) : t("VN");
     const provs = G.features.filter((f) => !S.region || f.properties.region === S.region);
-    const pr = groupRows(ps, "prov", S.showAll ? 0 : 12), bk = groupRows(ps, "group", 8);
+    const pr = groupRows(ps, "prov", S.showAll ? 0 : 12), bk = groupRows(ps, GK(), 8);
     return `<h2>${title}</h2><p class="sub">${t("provs_sub", { a: provs.length, b: pr.all })}</p>
       ${stats([[fmt(ps.length), t("projects")], [mwTxt(sum(ps)), t("capacity")], [invShare(ps), t("inv_share")]])}
       ${splitBar(ps)}
@@ -447,7 +456,7 @@
   }
   function provView(ps) {
     const f = provById.get(S.prov);
-    const pre = groupRows(ps, "pre", 0), bk = groupRows(ps, "group", 8);
+    const pre = groupRows(ps, "pre", 0), bk = groupRows(ps, GK(), 8);
     return `<h2>${esc(S.prov)}</h2><p class="sub">${REG(f.properties.region)} · ${MERGED[S.prov] ? t("merged", { x: esc(MERGED[S.prov].join(", ")) }) : t("unchanged")} · ${fmt(f.properties.km2)} km²</p>
       ${stats([[fmt(ps.length), t("projects")], [mwTxt(sum(ps)), t("capacity")], [invShare(ps), t("inv_share")]])}
       ${ps.length ? splitBar(ps) : `<p class="sub" style="margin-top:12px">${t("no_match")}</p>`}
@@ -458,7 +467,7 @@
   function backerView(ps) {
     const b = D.backers.find((x) => x.group === S.backer) || {};
     const pr = groupRows(ps, "prov", 0);
-    const all = P.filter((p) => p.group === S.backer);
+    const all = P.filter((p) => p[GK()] === S.backer);
     return `<h2 class="bh">${logo(S.backer, true)}<span>${esc(S.backer)}</span></h2><p class="sub">${esc(tr("btype", b.type))}${b.basis ? " · " + esc(b.basis) : ""}</p>
       ${stats([[fmt(ps.length), ps.length === all.length ? t("projects") : t("of_n", { n: all.length })], [mwTxt(sum(ps)), t("capacity")], [pr.all, t("provinces")]])}
       ${splitBar(ps)}
@@ -470,17 +479,24 @@
     const nf = `<div class="t" style="color:var(--muted)">${t("notfound")}</div>`;
     const link = (n, k, v, extra) => `<div class="lk"><span class="nd">${n}</span><div><div class="k">${k}</div>${v ? `<div class="t">${esc(v)}</div>` : nf}${extra || ""}</div></div>`;
     const srcRow = (id) => { const s = D.sources[id]; return s ? `<span class="m">${esc(s[0])} · ${esc(s[2] || "")} · <a href="${esc(s[3])}" target="_blank" rel="noopener">${id}</a></span>` : `<span class="m">${esc(id)}</span>`; };
+    // per-hop evidence: best label among the claims behind that link, plus its sources
+    const hop = (claims) => { const es = p.ev.filter((e) => claims.includes(e[0])); if (!es.length) return `<div class="hop"><span class="chip l-NOTFOUND">${t("hop_none")}</span></div>`;
+      const best = LABELS.find((l) => es.some((e) => e[3] === l));
+      return `<div class="hop">${chip(best)}${[...new Set(es.map((e) => e[4]))].slice(0, 3).map((id) => { const s = D.sources[id];
+        return s ? `<a href="${esc(s[3])}" target="_blank" rel="noopener" title="${esc(s[0])} · ${esc(s[2] || "")}">${esc(s[0])}</a>` : `<span>${esc(id)}</span>`; }).join("")}</div>`; };
+    const stakes = [...new Set(((p.inv || "") + " | " + (p.notes || "")).match(/[^.;|]{0,56}\b\d{1,3}(?:[.,]\d+)?\s?%[^.;|]{0,32}/g) || [])].slice(0, 4);
     const codTxt = p.cod ? `${esc(p.cod)} <span class="sub">(${esc(tr("codType", p.codType))}${p.codLabel ? ", " + esc(tr("label", p.codLabel)) : ""})</span>` : t("notfound");
     return `<h2>${esc(p.name)}</h2>
       <p class="sub num">${p.id} · ${esc(p.tbl)} · ${esc(p.pre)}${p.pre !== p.prov ? " → " + esc(p.prov) : ""} · ${REG(p.region)}</p>
       <div class="chips" style="margin-top:10px"><span class="chip"><i class="tdot ${p.tech === "Wind" ? "w" : "s"}"></i>${t(p.tech)}</span><span class="chip num">${fmt(p.mw)} MW</span>
         <span class="chip st">${esc(p.status)}</span>${chip(p.label)}${(p.fit || "").startsWith("Stalled") ? `<span class="chip bad">${t("stalled")}</span>` : ""}</div>
       <h3>${t("chain")}</h3><div class="chain">
-        ${link(1, t("c_inv"), p.inv, p.ent ? `<div class="k num" style="text-transform:none">${t("ent")} ${esc(p.ent)}</div>` : "")}
-        ${link(2, t("c_par"), p.parent)}
-        ${link(3, t("c_ult"), p.ult, p.country ? `<div class="k" style="text-transform:none">${esc(p.country)} · ${esc(tr("btype", p.btype))}</div>` : "")}
+        ${link(1, t("c_inv"), p.inv, (p.ent ? `<div class="k num" style="text-transform:none">${t("ent")} ${esc(p.ent)}</div>` : "") + hop(["investor_spv", "enterprise_code"]))}
+        ${link(2, t("c_par"), p.parent, hop(["direct_parent"]))}
+        ${link(3, t("c_ult"), p.ult, (p.country ? `<div class="k" style="text-transform:none">${esc(p.country)} · ${esc(tr("btype", p.btype))}</div>` : "") + hop(["ultimate_backer", "backer_country"]))}
         <div class="lk top"><span class="nd">G</span><div><div class="k">${t("c_grp")}</div>${p.group ? `<button type="button" class="t grp" data-backer="${esc(p.group)}">${logo(p.group)}${esc(p.group)} →</button>` : `<div class="t" style="color:var(--muted)">${t("c_stop")}</div>`}</div></div>
       </div>
+      ${stakes.length ? `<div class="stakes"><div class="k">${t("stakes")}</div>${stakes.map((x) => `<div>…${esc(x.trim()).replace(/(\d{1,3}(?:[.,]\d+)?\s?%)/g, "<b class=\"num\">$1</b>")}…</div>`).join("")}</div>` : ""}
       <h3>${t("timing")}</h3><dl class="kv">
         <dt>${t("t_status")}</dt><dd>${esc(tr("stage", p.stage))}${p.syear ? ", " + p.syear : ""}</dd>
         <dt>${t("t_period")}</dt><dd>${esc(p.period || t("notfound"))}</dd>
@@ -497,7 +513,7 @@
       ${p.ver.length ? `<h3>${t("recheck")} (${p.ver.length})</h3>${p.ver.map((v) => `<div class="ev"><div class="m num">${esc(v[0])} · ${esc(tr("claim", v[1]))}</div><div>${t("verifier")}: ${chip(v[2])} → ${t("now")} ${chip(v[3])}</div>${v[4] ? `<div class="m">${esc(v[4])}</div>` : ""}</div>`).join("")}` : ""}`;
   }
   function renderBackers(ps) {
-    const bk = groupRows(ps, "group", 18);
+    const bk = groupRows(ps, GK(), 18);
     $("#bk-title").textContent = t("bk_title", { w: S.prov || (S.region ? REG(S.region) : t("VN")) });
     $("#backers").innerHTML = bk.rows.length ? bk.rows.map((r, i) => `<button type="button" class="bk${r.key === S.backer ? " on" : ""}" data-backer="${esc(r.key)}">
         <span class="nm">${logo(r.key)}<span class="tx">${esc(r.key)}<span class="tchip">${esc(tr("btype", typeOf(r.key)))}</span></span></span>
@@ -535,8 +551,10 @@
   }
   // logo strip of the largest groups nationally under the current filters; a tile selects the backer
   function renderWall(F) {
-    const bk = groupRows(F, "group", 12);
-    $("#wall").innerHTML = `<div class="wall-h"><b>${t("wall")}</b><span>${t("wall_hint")}</span></div>
+    const bk = groupRows(F, GK(), 12);
+    const own = ["group", "inv"].map((k) => `<button type="button" data-own="${k}" aria-pressed="${S.own === k}">${t("own_" + k)}</button>`).join("");
+    $("#wall").innerHTML = `<div class="wall-h"><b>${t(S.own === "inv" ? "wall_inv" : "wall")}</b><span>${t("wall_hint")}</span>
+      <div class="seg own" role="group" aria-label="${t("own_al")}">${own}</div></div>
       <div class="wall-row">${bk.rows.map((r, i) => `<button type="button" class="wt${r.key === S.backer ? " on" : ""}" data-backer="${esc(r.key)}" style="animation-delay:${i * 35}ms">
         ${logo(r.key, true)}<span class="wn">${esc(r.key.replace(/\s*\((?:incl\.|HOSE).*?\)/, ""))}</span><span class="wv num">${mwTxt(r.t)}</span></button>`).join("")}</div>`;
   }
@@ -553,6 +571,7 @@
     document.addEventListener("click", (ev) => {
       const b = ev.target.closest("button"); if (!b) return;
       if (b.closest("#lang")) { setLang(b.dataset.lang); return; }
+      if (b.dataset.own) { S.own = b.dataset.own; S.backer = null; update(); frame(); return; }
       if (b.closest("#tech")) { S.tech = b.dataset.v; S.project = null; update(); return; }
       if (b.dataset.cody) { S.cody = S.cody === b.dataset.cody ? "" : b.dataset.cody; $("#f-cody").value = S.cody; S.project = null; update(); fcount(); return; }
       if (b.dataset.r) { setScope(S.region === b.dataset.r && !S.prov ? null : b.dataset.r, null); return; }
