@@ -93,7 +93,7 @@ button, select, input { font: inherit; color: inherit }
 .main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; align-items: start }
 .card { background: var(--paper); border-radius: 12px; box-shadow: var(--shadow); min-width: 0 }
 .mapcard { position: relative; overflow: hidden; background: var(--sea) }
-@media (min-width: 641px) { #map { max-height: 86vh } }
+@media (min-width: 641px) { #map { max-height: calc(100vh - 190px) } .mapcard { position: sticky; top: 12px } }
 #map { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1.02; touch-action: none; cursor: grab }
 #map:active { cursor: grabbing }
 .prov { fill: var(--c0); stroke: var(--land-line); stroke-width: .6; vector-effect: non-scaling-stroke; transition: fill .5s, opacity .4s; cursor: pointer }
@@ -112,7 +112,8 @@ button, select, input { font: inherit; color: inherit }
 .pt.hot { stroke: var(--red); stroke-width: 2.4 }
 .link { fill: none; stroke: var(--red); stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-linecap: round; opacity: .75; pointer-events: none }
 .ring { fill: none; stroke: var(--red); vector-effect: non-scaling-stroke; pointer-events: none }
-.mapui { display: flex; flex-direction: column; gap: 8px; padding: 12px 56px 4px 12px }
+.mapui { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 56px 4px 12px }
+.provsel { font: inherit; font-size: 13px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; box-shadow: var(--shadow); max-width: 100% }
 .zoom { position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 4px; z-index: 5 }
 .zoom button { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; font-size: 16px; line-height: 1 }
 .regions { display: flex; gap: 6px; flex-wrap: wrap }

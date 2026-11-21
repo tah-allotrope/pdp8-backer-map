@@ -70,7 +70,8 @@
     wire();
     renderFoot();
     window.PDP8 = { S, P, D, lang, t, tr, esc, fmt, mwTxt, sum, logo, filtered, inScope, GK, LABELS, REG,
-      update: () => update(), selectProject: (id) => selectProject(id), frame: () => frame() };
+      update: () => update(), selectProject: (id) => selectProject(id), frame: () => frame(),
+      selectProv: (id) => selectProv(id), home: () => setScope(null, null), provs: () => G.features.map((f) => f.id) };
     HOOKS.forEach((h) => h.init && h.init(window.PDP8));
     update(true);
   }

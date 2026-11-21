@@ -38,10 +38,21 @@
       if (lt) document.documentElement.dataset.ui = "light"; else delete document.documentElement.dataset.ui;
       store.set("pdp8-ui", lt ? "light" : "dark"); paint(); };
     paint();
+    provPicker(api);
     wire();
   }
 
+  function provPicker(api) {
+    const { t, esc } = api, sel = document.createElement("select");
+    sel.id = "provsel"; sel.className = "provsel"; sel.setAttribute("aria-label", t("prov_pick"));
+    const ids = api.provs().sort((x, y) => x.localeCompare(y, "vi"));
+    sel.innerHTML = `<option value="">${esc(t("prov_pick"))}</option>` + ids.map((id) => `<option value="${esc(id)}">${esc(id)}</option>`).join("");
+    sel.onchange = () => (sel.value ? api.selectProv(sel.value) : api.home());
+    $("#regions").after(sel);
+  }
+
   function update(F, scoped) {
+    if ($("#provsel")) $("#provsel").value = A.S.prov || "";
     const S = A.S;
     renderLede(F);
     document.querySelectorAll("#viewtabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.view === S.view)));
