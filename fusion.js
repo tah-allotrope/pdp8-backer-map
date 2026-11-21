@@ -59,14 +59,14 @@
       const [lo, hi] = TARGET[k], mx = Math.max(hi, v) * 1.04, x = (n) => (n / mx) * 100;
       const cls = k === "Wind" ? "w" : "s";
       return `<div class="tg"><div class="tg-h"><span><i class="tdot ${cls}"></i>${t(k === "Wind" ? "tg_wind" : "tg_solar")}</span>
-          <span class="num"><b>${A.mwTxt(v)}</b> ${t("tg_named")} · ${t("tg_of", { lo: pct(v / lo), hi: pct(v / hi) })}</span></div>
+          <span class="num" title="${t("tg_of", { lo: pct(v / lo), hi: pct(v / hi) })}"><b>${A.mwTxt(v)}</b></span></div>
         <div class="tg-tr" role="img" aria-label="${t(k === "Wind" ? "tg_wind" : "tg_solar")}: ${A.mwTxt(v)}; ${t("tg_range")} ${A.mwTxt(lo)}–${A.mwTxt(hi)}">
           <span class="tg-rng" style="left:${x(lo)}%;width:${x(hi) - x(lo)}%"></span><i class="tg-v ${cls}" style="width:${x(v)}%"></i>
           <span class="tg-tk" style="left:${x(lo)}%"></span><span class="tg-tk" style="left:${x(hi)}%"></span></div>
         <div class="tg-ax num"><span style="left:${x(lo)}%">${t("tg_low")} ${A.mwTxt(lo)}</span><span class="hi" style="left:${x(hi)}%">${t("tg_high")} ${A.mwTxt(hi)}</span></div></div>`;
     }).join("");
     $("#lede").innerHTML = `<div class="lede-txt"><span class="kick">${t("lede_k")}</span><p class="find">${line}</p></div>
-      <div class="lede-bars">${bars}</div><p class="lede-note">${t("tg_note")}</p>`;
+      <div class="lede-bars">${bars}</div><details class="lede-note"><summary>${t("tg_about")}</summary>${t("tg_note")}</details>`;
   }
 
   /* ---------- table view + CSV ---------- */
