@@ -71,7 +71,9 @@
     renderFoot();
     window.PDP8 = { S, P, D, lang, t, tr, esc, fmt, mwTxt, sum, logo, filtered, inScope, GK, LABELS, REG,
       update: () => update(), selectProject: (id) => selectProject(id), frame: () => frame(),
-      selectProv: (id) => selectProv(id), home: () => setScope(null, null), provs: () => G.features.map((f) => f.id) };
+      selectProv: (id) => selectProv(id), home: () => setScope(null, null), provs: () => G.features.map((f) => f.id),
+      // map internals for factories.js (Nike layer): projection, zoomable group, current zoom scale
+      proj: () => proj, root: () => gRoot, k: () => curK, zoomTo: (b, maxK) => zoomToBounds(b, maxK) };
     HOOKS.forEach((h) => h.init && h.init(window.PDP8));
     update(true);
   }
@@ -162,7 +164,7 @@
     const rk = narrow() ? 0.62 : 1;
     P.forEach((p) => { [p.px, p.py] = proj(p.xy); p.r0 = Math.max(1.8, Math.sqrt(p.mw) * 0.42 * rk); });
     pts = gPts.selectAll("circle").data(d3.sort(P, (a, b) => b.mw - a.mw)).join("circle")
-      .attr("class", (p) => `pt ${p.tech === "Wind" ? "w" : "s"}${p.inv || p.group ? "" : " nf"}`)
+      .attr("class", (p) => `pt ${p.tech === "Wind" ? "w" : "s"}${p.inv || p.group ? "" : " nf"}${p.loc ? " loc" : ""}`)
       .attr("cx", (p) => p.px).attr("cy", (p) => p.py).attr("r", 0)
       .on("mousemove", (ev, p) => tipProj(ev, p)).on("mouseleave", hideTip)
       .on("click", (ev, p) => { ev.stopPropagation(); selectProject(p.id); });
@@ -214,6 +216,7 @@
     gFx.selectAll(".ring").attr("stroke-width", 2);
     gLab.selectAll("text").style("font-size", `${11 / curK}px`).style("stroke-width", `${3 / curK}px`)
       .style("display", (f) => (curK >= 2.1 && (!S.region || f.properties.region === S.region) ? null : "none"));
+    HOOKS.forEach((h) => h.rescale && h.rescale(curK));
   }
   function zoomToBounds(b, maxK = 9, dur = 950) {
     const [[x0, y0], [x1, y1]] = b;
