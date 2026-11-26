@@ -401,6 +401,8 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
 .fac { fill: var(--paper); stroke: var(--ink); stroke-width: 1.2; vector-effect: non-scaling-stroke; cursor: pointer; display: none }
 .fac.hit { fill: var(--red) }
 #map.fac-on .fac { display: inline }
+#map .fac.pnear { fill: var(--red); stroke: var(--ink); stroke-width: 2.4 }
+#map.proj-fac .fac:not(.pnear) { opacity: .2 }
 #factog { color: var(--red); font-size: 13px }
 #factog[aria-pressed="true"] { background: var(--red); color: var(--paper); border-color: var(--red) }
 .fbt { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--red); color: var(--red); margin-right: 4px; white-space: nowrap }
@@ -441,7 +443,7 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
   <div class="wrap">
     <div>
       <h1 data-i18n="title">Vietnam PDP8 wind &amp; solar: who backs each project</h1>
-      <p id="meta">Backer map v0.792 · 744 projects named in Decision 1509/QĐ-BCT · 34 provinces after the 2025 merger</p>
+      <p id="meta">Backer map v0.793 · 744 projects named in Decision 1509/QĐ-BCT · 34 provinces after the 2025 merger</p>
     </div>
     <div class="band-r">
       <button type="button" class="uitog" id="uitog" aria-label="Light mode" data-i18n-al="ui_light">☀</button>

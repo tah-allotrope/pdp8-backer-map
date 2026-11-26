@@ -6,7 +6,7 @@
   const BANDS = [[5, "b1"], [15, "b2"], [30, "b3"]];
   const ELIG = new Set(["Eligible – open", "Eligible – no investor yet"]);
   const $ = (s) => document.querySelector(s);
-  let A, t, F = [], byCode, pairsBy, on = false, sel = null, g, gRing, all = false;
+  let A, t, F = [], byCode, pairsBy, byProj = new Map(), on = false, sel = null, g, gRing, all = false, lastProj = null;
   // distance band of a factory's nearest eligible MW: 0 = ≤5 km (best), 1 = ≤15 km, 2 = ≤30 km, 3 = none
   const band = (f) => f.mw5 > 0 ? 0 : f.mw15 > 0 ? 1 : f.mw30 > 0 ? 2 : 3;
   const bmw = (f) => [f.mw5, f.mw15, f.mw30, 0][band(f)];
@@ -20,6 +20,8 @@
     byCode = new Map(F.map((f) => [f.code, f]));
     const proj = new Map(A.P.map((p) => [p.id, p]));
     pairsBy = d3.group((A.D.pairs || []).map(([c, id, km]) => ({ c, p: proj.get(id), km })).filter((r) => r.p), (r) => r.c);
+    byProj = d3.group((A.D.pairs || []).filter(([c]) => byCode.has(c)).map(([c, id, km]) => ({ f: byCode.get(c), id, km })), (r) => r.id);
+    window.PDP8_FAC = { projHTML, bounds, pick: (code) => pick(code, false) };
     F.sort((a, b) => band(a) - band(b) || bmw(b) - bmw(a) || near(a) - near(b));
     draw();
     card();
@@ -98,6 +100,7 @@
     const hot = new Set((pairsBy.get(sel) || []).map((r) => r.p.id));
     d3.selectAll("#map .pt").classed("fnear", (p) => hot.has(p.id));
     $("#map").classList.toggle("fac-sel", !!sel);
+    $("#map").classList.toggle("proj-fac", !sel && (byProj.get(A.S.project) || []).length > 0);
     render();
     if (fromMap && sel) $("#faccard").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
@@ -138,5 +141,28 @@
     if (!g) return;
     const hot = new Set((pairsBy.get(sel) || []).map((r) => r.p.id));
     d3.selectAll("#map .pt").classed("fnear", (p) => hot.has(p.id));
+    // project picked (map, list or ?project= link): mark its nearby factories; switch the layer on only when the project changes
+    const pid = A.S.project, near = new Set((byProj.get(pid) || []).map((r) => r.f.code));
+    if (pid !== lastProj) { lastProj = pid; if (near.size && !on) toggle(true); }
+    g.selectAll("path").classed("pnear", (f) => near.has(f.code));
+    $("#map").classList.toggle("proj-fac", near.size > 0 && !sel); // fade other factories while a project's set is shown
+  }
+  const rowsFor = (id) => (byProj.get(id) || []).slice().sort((a, b) => a.km - b.km);
+  // project panel block: Nike factories within 30 km of a project (direct-wire DPPA candidates)
+  function projHTML(p) {
+    const rows = rowsFor(p.id), esc = A.esc;
+    if (!rows.length) return "";
+    const bnd = (k) => (BANDS.find(([lim]) => k <= lim) || BANDS[2])[1];
+    return `<h3>${t("pf_title", { n: rows.length })}</h3><p class="sub">${t("fac_caveat")}</p>
+      <ul class="fpairs pfac">${rows.map(({ f, km: k }) => `<li class="${bnd(k)}"><button type="button" data-fac="${esc(f.code)}">
+        <span class="num">${km(k)}</span><span class="fn">${esc(f.name)}</span>
+        <span class="fs">${esc(f.sup || "–")} · ${esc(f.type || "–")} · ${esc(f.tier || "–")} · ${A.fmt(f.workers || 0)} ${t("pf_workers")} ${ceba(f)}</span></button></li>`).join("")}</ul>`;
+  }
+  // map frame for a project with nearby factories: the project plus those factories
+  function bounds(p) {
+    const fs = rowsFor(p.id).map((r) => r.f).filter((f) => !f.nodist && f.px != null);
+    if (!fs.length) return null;
+    const xs = [p.px, ...fs.map((f) => f.px)], ys = [p.py, ...fs.map((f) => f.py)], pad = 24;
+    return [[d3.min(xs) - pad, d3.min(ys) - pad], [d3.max(xs) + pad, d3.max(ys) + pad]];
   }
 })();

@@ -76,6 +76,8 @@
       proj: () => proj, root: () => gRoot, k: () => curK, zoomTo: (b, maxK) => zoomToBounds(b, maxK) };
     HOOKS.forEach((h) => h.init && h.init(window.PDP8));
     update(true);
+    if (S.project || S.backer || S.prov || S.region) frame(); // a shared link opens zoomed on its selection
+    if (S.project) $(".mapcard").scrollIntoView({ block: "start" }); // and scrolled to the map + project panel, any width
   }
 
   // static page text carries data-i18n (text), data-i18n-ph (placeholder) or data-i18n-al (aria-label)
@@ -233,7 +235,8 @@
     return path.bounds(fc);
   }
   function frame() {
-    if (S.project) { const p = projById.get(S.project); const r = 34; zoomToBounds([[p.px - r, p.py - r], [p.px + r, p.py + r]], 7); return; }
+    if (S.project) { const p = projById.get(S.project), r = 34, fb = window.PDP8_FAC && window.PDP8_FAC.bounds(p);
+      zoomToBounds(fb || [[p.px - r, p.py - r], [p.px + r, p.py + r]], 7); return; }
     if (S.backer) { const ps = P.filter((p) => p[GK()] === S.backer && pass(p)); if (ps.length) {
       const xs = ps.map((p) => p.px), ys = ps.map((p) => p.py), pad = 40;
       zoomToBounds([[d3.min(xs) - pad, d3.min(ys) - pad], [d3.max(xs) + pad, d3.max(ys) + pad]], 6); return; } }
@@ -336,6 +339,7 @@
     let q; try { q = new URLSearchParams(location.search); } catch { return; }
     UKEYS.forEach((k) => { const v = q.get(k); if (v) S[k] = v; });
     if (S.project && !projById.has(S.project)) S.project = null;
+    if (S.project) { const p = projById.get(S.project); S.prov = p.prov; S.region = p.region; } // as selectProject does
     if (S.prov && !provById.has(S.prov)) S.prov = S.region = null;
     if (S.own !== "inv") S.own = "group";
     if (S.view !== "table") S.view = "map";
@@ -516,6 +520,7 @@
         ${p.offtake ? `<dt>${t("t_off")}</dt><dd>${esc(p.offtake)}</dd>` : ""}
         <dt>${t("t_change")}</dt><dd>${esc(p.change)}${p.found ? ` <span class="sub">(${t("found_in")} ${esc(p.found)})</span>` : ""}</dd>
       </dl>
+      ${window.PDP8_FAC ? window.PDP8_FAC.projHTML(p) : ""}
       ${p.notes ? `<h3>${t("notes")}${t("notes_lang")}</h3><div class="note">${esc(p.notes)}</div>` : ""}
       <h3>${t("evidence")} (${p.ev.length})</h3>
       ${p.ev.length ? p.ev.map((e) => `<div class="ev"><div><b>${esc(tr("claim", e[0]))}</b> ${chip(e[3])}</div><div>${esc(e[1])}</div>${e[2] ? `<q>${esc(e[2])}</q>` : ""}${srcRow(e[4])}</div>`).join("")
@@ -588,6 +593,7 @@
       if (b.dataset.prov) { selectProv(b.dataset.prov); return; }
       if (b.dataset.backer) { selectBacker(b.dataset.backer); return; }
       if (b.dataset.p) { selectProject(b.dataset.p); return; }
+      if (b.dataset.fac && b.closest(".pfac") && window.PDP8_FAC) { window.PDP8_FAC.pick(b.dataset.fac); return; }
       if (b.dataset.more) { S.showAll = true; renderPanel(filtered(), filtered().filter(inScope)); return; }
       if (b.dataset.home) { setScope(null, null); return; }
       if (b.dataset.c === "nation") setScope(null, null);
