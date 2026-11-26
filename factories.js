@@ -1,4 +1,4 @@
-/* Nike supplier layer (v0.79): factory triangles, 5/15/30 km rings, and a card ranking factories by eligible MW
+/* Nike supplier layer (v0.79): factory swoosh markers (size = workers, red = eligible MW ≤15 km), 5/15/30 km rings, and a card ranking factories by eligible MW
    within 15 km with each factory's nearby projects. Data from build_map_data.py (D.factories, D.pairs [code, id, km]).
    Hooks in through window.PDP8_HOOKS; strings live in i18n.js (fac_*). */
 (() => {
@@ -6,7 +6,7 @@
   const BANDS = [[5, "b1"], [15, "b2"], [30, "b3"]];
   const ELIG = new Set(["Eligible – open", "Eligible – no investor yet"]);
   const $ = (s) => document.querySelector(s);
-  let A, t, F = [], byCode, pairsBy, byProj = new Map(), on = false, sel = null, g, gRing, all = false, lastProj = null;
+  let A, t, F = [], byCode, pairsBy, byProj = new Map(), on = false, sel = null, g, gRing, gClu, all = false, lastProj = null, pnear = new Set();
   // distance band of a factory's nearest eligible MW: 0 = ≤5 km (best), 1 = ≤15 km, 2 = ≤30 km, 3 = none
   const band = (f) => f.mw5 > 0 ? 0 : f.mw15 > 0 ? 1 : f.mw30 > 0 ? 2 : 3;
   const bmw = (f) => [f.mw5, f.mw15, f.mw30, 0][band(f)];
@@ -26,15 +26,21 @@
     draw();
     card();
     const tb = $("#factog");
-    if (tb) { tb.hidden = false; tb.addEventListener("click", () => toggle()); }
+    if (tb) { tb.innerHTML = icon("tog", 20); tb.hidden = false; tb.addEventListener("click", () => toggle()); }
   }
   // layer is off by default; the map button and the card button share this state
   function toggle(v = !on) {
     on = v;
     $("#map").classList.toggle("fac-on", on);
     $("#factog")?.setAttribute("aria-pressed", on);
+    legend();
     if (!on && sel) pick(null, false); else render();
   }
+  // hand-drawn swoosh-style glyph, centred on 0,0, about 24 x 12 units; shared by the map, the toggle and the legend
+  const SWOOSH = "M-8.6,-1.6C-12.2,3.6-10.4,7-4.8,5.2L12,-5.6L-5.2,1.9C-8.4,3-9.8,1.3-8.6,-1.6Z";
+  const icon = (cls, w = 22) => `<svg class="swoosh ${cls}" width="${w}" height="${Math.round(w * 0.55)}" viewBox="-12 -7 25 13" aria-hidden="true"><path d="${SWOOSH}"/></svg>`;
+  // marker size by workers on a log scale: 47 workers -> 0.6, 34,000 -> 1.35
+  const wsz = (f) => 0.6 + 0.75 * Math.max(0, Math.min(1, (Math.log10(f.workers || 50) - 1.7) / 2.83));
   const near = (f) => d3.min(pairsBy.get(f.code) || [], (r) => r.km) ?? 999;
 
   /* ---------- map layer ---------- */
@@ -42,11 +48,11 @@
     const proj = A.proj(), root = A.root();
     gRing = root.append("g").attr("class", "frings");
     g = root.append("g").attr("class", "facs");
-    const tri = d3.symbol(d3.symbolTriangle);
+    gClu = root.append("g").attr("class", "fclus");
     g.selectAll("path").data(F.filter((f) => !f.nodist)).join("path")
       .attr("class", (f) => `fac${f.mw15 > 0 ? " hit" : ""}`)
       .attr("transform", (f) => { const [x, y] = proj(f.xy); f.px = x; f.py = y; return `translate(${x},${y})`; })
-      .attr("d", tri.size(46)).attr("tabindex", 0).attr("role", "button")
+      .attr("d", SWOOSH).attr("tabindex", 0).attr("role", "button")
       .attr("aria-label", (f) => `${f.name} · ${t("fac_panel")}`)
       .on("click", (ev, f) => { ev.stopPropagation(); pick(f.code, true); })
       .on("keydown", (ev, f) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); pick(f.code, true); } })
@@ -55,9 +61,44 @@
   }
   function rescale(k) {
     if (!g) return;
-    const s = Math.pow(k, -0.75), proj = A.proj();
-    g.selectAll("path").attr("transform", (f) => `translate(${f.px},${f.py}) scale(${s * (sel === f.code ? 1.6 : 1)})`);
+    const s = Math.pow(k, -0.75) * (innerWidth < 640 ? 0.75 : 1), proj = A.proj(); // smaller on phones, where the map is ~400 px wide
+    g.selectAll("path").attr("transform", (f) => `translate(${f.px},${f.py}) scale(${0.7 * s * wsz(f) * (pnear.has(f.code) ? 1.25 : 1) * (sel === f.code ? 1.6 : 1)})`);
     gRing.selectAll("circle").attr("r", function () { return +this.dataset.km * kmPx(proj); });
+    cluster(k);
+  }
+  // factories closer than ~22 screen px merge into one badge with a count; a picked project's or factory's markers stay single
+  function cluster(k) {
+    const phone = innerWidth < 640, r = (phone ? 18 : 22) / k, keep = (f) => pnear.has(f.code) || sel === f.code;
+    const pts = F.filter((f) => !f.nodist && f.px != null).sort((a, b) => (b.workers || 0) - (a.workers || 0));
+    const used = new Set(), out = [];
+    for (const f of pts) {
+      if (used.has(f) || keep(f)) continue;
+      const m = pts.filter((o) => !used.has(o) && !keep(o) && Math.hypot(o.px - f.px, o.py - f.py) < r);
+      if (m.length < 2) continue;
+      m.forEach((o) => used.add(o));
+      out.push({ m, x: d3.mean(m, (o) => o.px), y: d3.mean(m, (o) => o.py), hit: m.some((o) => o.mw15 > 0), id: m.map((o) => o.code).join() });
+    }
+    g.selectAll("path").classed("clu", (f) => used.has(f));
+    const sz = (phone ? 0.8 : 1) / k;
+    gClu.selectAll("g.fclu").data(out, (c) => c.id)
+      .join((en) => { const e = en.append("g").attr("class", "fclu").attr("tabindex", 0).attr("role", "button"); e.append("rect"); e.append("path").attr("d", SWOOSH); e.append("text"); return e; })
+      .classed("hit", (c) => c.hit)
+      .attr("transform", (c) => `translate(${c.x},${c.y}) scale(${sz})`)
+      .attr("aria-label", (c) => t("fac_clu", { n: c.m.length }))
+      .each(function (c) { pillDraw(d3.select(this), c.m.length); })
+      .on("click", (ev, c) => { ev.stopPropagation(); zoomClu(c); })
+      .on("keydown", (ev, c) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); zoomClu(c); } });
+  }
+  // badge geometry (shared with the legend swatch): pill with a swoosh on the left and the count on the right
+  function pillDraw(sel, n) {
+    const w = 26 + 7 * String(n).length;
+    sel.select("rect").attr("x", -w / 2).attr("y", -10).attr("width", w).attr("height", 20).attr("rx", 10);
+    sel.select("path").attr("transform", `translate(${-w / 2 + 11},0.5) scale(0.48)`);
+    sel.select("text").attr("x", -w / 2 + 20).attr("y", 4).text(n);
+  }
+  function zoomClu(c) {
+    const xs = c.m.map((o) => o.px), ys = c.m.map((o) => o.py), pad = 4 / A.k();
+    A.zoomTo([[d3.min(xs) - pad, d3.min(ys) - pad], [d3.max(xs) + pad, d3.max(ys) + pad]], A.k() * 4);
   }
   // px per km at the selected factory (Mercator: measure 1 km north)
   function kmPx(proj) {
@@ -144,8 +185,18 @@
     // project picked (map, list or ?project= link): mark its nearby factories; switch the layer on only when the project changes
     const pid = A.S.project, near = new Set((byProj.get(pid) || []).map((r) => r.f.code));
     if (pid !== lastProj) { lastProj = pid; if (near.size && !on) toggle(true); }
-    g.selectAll("path").classed("pnear", (f) => near.has(f.code));
+    pnear = near; g.selectAll("path").classed("pnear", (f) => near.has(f.code)); rescale(A.k());
+    if (on && !$("#legend .facleg")) legend();
     $("#map").classList.toggle("proj-fac", near.size > 0 && !sel); // fade other factories while a project's set is shown
+  }
+  // legend row for the factory layer, shown only while the layer is on (app.js owns the rest of #legend)
+  function legend() {
+    const L = $("#legend"); if (!L) return;
+    let r = L.querySelector(".facleg");
+    if (!r) { r = document.createElement("div"); r.className = "row facleg"; L.prepend(r); }
+    r.innerHTML = `<span class="sw">${icon("hit")}${t("fac_lg_hit")}</span><span class="sw">${icon("off")}${t("fac_lg_off")}</span><span class="sw">${icon("off", 14)}${icon("off", 24)}${t("fac_lg_size")}</span><span class="sw"><svg class="fclu-sw" width="40" height="22" viewBox="-20 -11 40 22" aria-hidden="true"><g class="fclu hit"><rect/><path d="${SWOOSH}"/><text/></g></svg>${t("fac_lg_clu")}</span>`;
+    pillDraw(d3.select(r).select(".fclu"), 12);
+    r.hidden = !on;
   }
   const rowsFor = (id) => (byProj.get(id) || []).slice().sort((a, b) => a.km - b.km);
   // project panel block: Nike factories within 30 km of a project (direct-wire DPPA candidates)

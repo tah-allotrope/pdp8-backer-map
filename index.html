@@ -398,12 +398,24 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
 .pt.loc { stroke: var(--ink); stroke-width: 1.1 }
 #map.fac-sel .pt:not(.fnear) { opacity: .18 }
 #map .pt.fnear { stroke: var(--red); stroke-width: 1.8 }
-.fac { fill: var(--paper); stroke: var(--ink); stroke-width: 1.2; vector-effect: non-scaling-stroke; cursor: pointer; display: none }
+.fac { fill: var(--ink); stroke: var(--bg); stroke-width: 2; paint-order: stroke; stroke-linejoin: round; vector-effect: non-scaling-stroke; cursor: pointer; display: none }
 .fac.hit { fill: var(--red) }
 #map.fac-on .fac { display: inline }
-#map .fac.pnear { fill: var(--red); stroke: var(--ink); stroke-width: 2.4 }
+#map .fac.pnear { fill: var(--red); stroke: var(--bg); stroke-width: 3 }
 #map.proj-fac .fac:not(.pnear) { opacity: .2 }
-#factog { color: var(--red); font-size: 13px }
+#factog { color: var(--red); display: inline-flex; align-items: center; justify-content: center }
+#factog .swoosh path { fill: currentColor; stroke: none }
+.swoosh path { fill: var(--ink) }
+.swoosh.hit path { fill: var(--red) }
+.legend .facleg[hidden] { display: none }
+#map.fac-on .fac.clu { display: none }
+.fclu { display: none; cursor: pointer }
+#map.fac-on .fclu, .fclu-sw .fclu { display: inline }
+.fclu rect { fill: var(--ink); stroke: var(--bg); stroke-width: 1.5 }
+.fclu.hit rect { fill: var(--red) }
+.fclu path { fill: var(--bg) }
+.fclu text { fill: var(--bg); font: 700 11px/1 system-ui, sans-serif }
+#map.proj-fac .fclu, #map.fac-sel .fclu { opacity: .2 }
 #factog[aria-pressed="true"] { background: var(--red); color: var(--paper); border-color: var(--red) }
 .fbt { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--red); color: var(--red); margin-right: 4px; white-space: nowrap }
 .fbt.b1 { background: var(--red); color: var(--paper) } .fbt.b3 { opacity: .6 }
@@ -485,7 +497,7 @@ dl.kv dd { margin: 0; overflow-wrap: anywhere }
     <div class="maincol">
     <div class="card mapcard">
       <div class="mapui"><div class="regions" id="regions"></div></div>
-      <div class="zoom"><button type="button" id="zin" aria-label="Zoom in" data-i18n-al="zin">+</button><button type="button" id="zout" aria-label="Zoom out" data-i18n-al="zout">−</button><button type="button" id="zhome" aria-label="Show all of Vietnam" data-i18n-al="zhome">⌂</button><button type="button" id="factog" aria-pressed="false" aria-label="Nike factories" data-i18n-al="fac_layer" title="Nike factories" hidden>▲</button></div>
+      <div class="zoom"><button type="button" id="zin" aria-label="Zoom in" data-i18n-al="zin">+</button><button type="button" id="zout" aria-label="Zoom out" data-i18n-al="zout">−</button><button type="button" id="zhome" aria-label="Show all of Vietnam" data-i18n-al="zhome">⌂</button><button type="button" id="factog" aria-pressed="false" aria-label="Nike factories" data-i18n-al="fac_layer" title="Nike factories" hidden>Nike</button></div>
       <svg id="map" role="img" aria-label="Map of Vietnam's 34 provinces with PDP8 wind and solar projects"></svg>
       <p class="maphint" data-i18n="maphint">Pinch or tap + to zoom · tap a dot or province</p>
       <div class="legend" id="legend"></div>
